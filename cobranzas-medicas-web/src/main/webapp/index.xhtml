@@ -1,0 +1,465 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:rich="http://richfaces.org/rich"
+	xmlns:a4j="http://richfaces.org/a4j">
+
+<body>
+	<ui:composition template="/WEB-INF/templates/template.xhtml">
+		<ui:define name="title">Más Vida</ui:define>
+		<ui:define name="body">
+
+			<!-- INICIO DE LA PANTALLA PRINCIPAL -->
+			<h:form id="loginId">
+			<rich:toolbar height="30" itemSeparator="line">
+			<rich:toolbarGroup>
+			<h:outputLabel>Más Vida HandsOn - Cobranza</h:outputLabel>
+			</rich:toolbarGroup>
+    		<rich:toolbarGroup location="right">
+    		<h:outputLabel>Bienvenido, #{loginMBean.username}</h:outputLabel>
+    		</rich:toolbarGroup>
+    		<rich:toolbarGroup location="right">
+    	    <h:commandButton action="#{loginMBean.logout}" value="Cerrar Sesión" />
+    		</rich:toolbarGroup>
+    		</rich:toolbar></h:form>
+    	   
+    	   <br />
+    	   
+			<rich:panel header="Mantención Recepción de cobranzas médicas">
+				<h:form id="formGralId">
+					<rich:panel header="Identificación RCM" id="formRcmId">
+						<h:panelGrid columns="8">
+							<h:outputLabel value="Folio: " for="folioId" />
+							<h:inputText id="folioId" value="#{cobradorMBean.rcm.folio}"
+								required="true" label="Folio"
+								disabled="#{!cobradorMBean.nuevoFolio}" size="6">
+								<a4j:ajax event="change" listener="#{cobradorMBean.resolveRcm}"
+									execute="@this" render="@form" />
+								<a4j:ajax event="keyup"
+									onbeforesubmit="event.preventDefault(); if (event.keyCode != 13) { return false;}"
+									listener="#{cobradorMBean.resolveRcm}" execute="@this"
+									render="@form" />
+							</h:inputText>
+
+							<h:outputLabel value="Fecha recepción: " for="fechaRecId" />
+							<rich:calendar enableManualInput="true" id="fechaRecId"
+								label="Fecha Recepción RCM" datePattern="dd/MM/yyyy"
+								required="true" value="#{cobradorMBean.rcm.fechaRecepcion}">
+							</rich:calendar>
+
+							<h:outputLabel value="Fecha registro: " for="fechaRegId" />
+							<rich:calendar enableManualInput="true" id="fechaRegId"
+								datePattern="dd/MM/yyyy"
+								value="#{cobradorMBean.rcm.fechaRegistro}" disabled="true">
+							</rich:calendar>
+
+							<h:outputLabel value="Agencia Recepción: " for="agenciaRecId" />
+							<h:column>
+								<h:inputText id="agenciaRecId" size="3" required="true"
+									label="Agencia Recepción" autocomplete="off"
+									value="#{cobradorMBean.rcm.agenciaRecepcion.id}">
+									<a4j:ajax event="change"
+										oncomplete="if (#{facesContext.maximumSeverity != null}) {#{rich:component(':messagesPopup')}.show();}"
+										listener="#{cobradorMBean.resolveAgencia}" execute="@this"
+										render="nombreAgenciaRecepId agenciaPagoId agenciaPagoAjaxId :facesMessagesId" />
+									<a4j:ajax event="keyup"
+										onbeforesubmit="event.preventDefault(); if (event.keyCode != 13) { return false;}"
+										oncomplete="if (#{facesContext.maximumSeverity != null}) {#{rich:component(':messagesPopup')}.show();}"
+										listener="#{cobradorMBean.resolveAgencia}" execute="@this"
+										render="nombreAgenciaRecepId agenciaPagoId agenciaPagoAjaxId :facesMessagesId" />
+								</h:inputText>
+
+								<h:panelGroup id="nombreAgenciaRecepId">
+									<h:inputText
+										value="#{cobradorMBean.rcm.agenciaRecepcion.descripcion}"
+										disabled="true" />
+								</h:panelGroup>
+							</h:column>
+						</h:panelGrid>
+
+						<div>
+							<h:outputLabel value="Observación: " for="obsId" />
+							<h:inputTextarea id="obsId"
+								value="#{cobradorMBean.rcm.observacion}" style="width: 90%" />
+						</div>
+					</rich:panel>
+
+					<rich:panel header="Pago" id="formPagoId">
+						<h:panelGrid columns="6">
+							<h:outputLabel value="Rut Cobrador:" for="rutCobradorId" />
+							<h:inputText id="rutCobradorId" size="12" required="true"
+								styleClass="rutFormatClass" label="Rut Cobrador"
+								value="#{cobradorMBean.pago.cobrador.rut}">
+								<f:converter
+									converterId="com.redhat.mas.vida.converter.RutConverter" />
+								<a4j:ajax event="change"
+									oncomplete="if (#{facesContext.maximumSeverity != null}) {#{rich:component(':messagesPopup')}.show();}"
+									listener="#{cobradorMBean.resolveNombreCobrador}"
+									execute="@this" render="nombreAjaxId :facesMessagesId" />
+								<a4j:ajax event="keyup"
+									onbeforesubmit="event.preventDefaults(); if (event.keyCode != 13) { return false;}"
+									oncomplete="if (#{facesContext.maximumSeverity != null}) {#{rich:component(':messagesPopup')}.show();}"
+									listener="#{cobradorMBean.resolveNombreCobrador}"
+									execute="@this" render="nombreAjaxId :facesMessagesId" />
+							</h:inputText>
+							<h:outputLabel value="A Nombre de:" for="nombreAjaxId" />
+							<h:column>
+								<h:panelGroup id="nombreAjaxId">
+									<h:inputText value="#{cobradorMBean.pago.cobrador.nombre}"
+										disabled="true" />
+								</h:panelGroup>
+							</h:column>
+							<h:outputLabel value="Tipo Pago: " for="tipoPagoId" />
+							<h:column>
+								<h:inputText id="tipoPagoId" size="3" required="true"
+									label="Código Tipo de Pago" autocomplete="off"
+									value="#{cobradorMBean.pago.tipoPago.id}">
+									<a4j:ajax event="change"
+										oncomplete="if (#{facesContext.maximumSeverity != null}) {#{rich:component(':messagesPopup')}.show();}"
+										listener="#{cobradorMBean.resolveTipoPago}" execute="@this"
+										render="nombreTipoPagoId :facesMessagesId" />
+									<a4j:ajax event="keyup"
+										onbeforesubmit="event.preventDefault(); if (event.keyCode != 13) { return false;}"
+										oncomplete="if (#{facesContext.maximumSeverity != null}) {#{rich:component(':messagesPopup')}.show();}"
+										listener="#{cobradorMBean.resolveTipoPago}" execute="@this"
+										render="nombreTipoPagoId :facesMessagesId" />
+								</h:inputText>
+								<h:panelGroup id="nombreTipoPagoId">
+									<h:inputText value="#{cobradorMBean.pago.tipoPago.nombre}"
+										disabled="true" />
+								</h:panelGroup>
+							</h:column>
+
+							<h:outputLabel value="Fecha Pago: " for="fechaPagoId" />
+							<rich:calendar enableManualInput="true" id="fechaPagoId"
+								required="true" datePattern="dd/MM/yyyy" label="Fecha de pago"
+								value="#{cobradorMBean.pago.fechaPago}">
+
+							</rich:calendar>
+
+							<h:outputLabel value="Agencia Pago: " for="agenciaPagoId" />
+							<h:column>
+								<h:inputText id="agenciaPagoId" size="3"
+									value="#{cobradorMBean.pago.agenciaPago.id}">
+									<a4j:ajax event="change" render="agenciaPagoAjaxId" />
+								</h:inputText>
+								<h:panelGroup id="agenciaPagoAjaxId">
+									<h:inputText
+										value="#{cobradorMBean.pago.agenciaPago.descripcion}"
+										disabled="true" />
+								</h:panelGroup>
+							</h:column>
+
+							<h:outputLabel value="Convenio de Prepago:"
+								for="convenioPrepagoId" />
+							<h:inputText id="convenioPrepagoId"
+								value="#{cobradorMBean.pago.convenioPago}" size="4" />
+						</h:panelGrid>
+					</rich:panel>
+
+					<rich:panel header="Órdenes de atención pagadas"
+						id="formOrdenPagoId">
+						<rich:extendedDataTable value="#{ordenPagoMBean.ordenes}"
+							columnClasses="column_ordenes" var="orden"
+							style="height:300px;" selectionMode="none" id="ordenesTableId"
+							rowKeyVar="rowKeyVar">
+							<rich:column width="150px">
+								<f:facet name="header">
+									<h:outputText value="Folio OA" />
+								</f:facet>
+								<h:inputText value="#{orden.folioOA}" readonly="#{loginMBean.userHO}">
+									<a4j:ajax event="keyup"
+										onbeforesubmit="event.preventDefault(); if (event.keyCode != 13) { return false;}"
+										listener="#{ordenPagoMBean.verificarFolioOA}" execute="formOrdenPagoId"
+										render="ordenesTableId cantidadOaId montoId descuentoId" />
+									<a4j:ajax event="change"
+										onbeforesubmit="event.preventDefault();"
+										listener="#{ordenPagoMBean.verificarFolioOA}" execute="formOrdenPagoId"
+										render="ordenesTableId cantidadOaId montoId descuentoId" />
+									<f:attribute name="rowIndexId" value="#{rowKeyVar}" />
+								</h:inputText>
+								<f:facet name="footer"><h:outputText value="Totales:"/></f:facet>
+							</rich:column>
+							<rich:column width="170px">
+								<f:facet name="header">
+									<h:outputText value="Fecha Emisión" />
+								</f:facet>
+								<rich:calendar readonly="#{loginMBean.userHO}" enableManualInput="true" 
+									value="#{orden.fechaEmision}" datePattern="dd/MM/yyyy" >
+								</rich:calendar>
+							</rich:column>
+							<rich:column width="150px">
+								<f:facet name="header">
+									<h:outputText value="Valor" />
+								</f:facet>
+								<h:inputText readonly="#{loginMBean.userHO}" value="#{orden.valor}">
+									<a4j:ajax value="change"
+										listener="#{ordenPagoMBean.actualizarDatosResumen}"
+										render="cantidadOaId montoId descuentoId ordenesTableId" />
+								</h:inputText>
+								<f:facet name="footer"><h:outputText id="ftotal" value="#{ordenPagoMBean.totalvalor}"/></f:facet>
+							</rich:column>
+							<rich:column width="150px">
+								<f:facet name="header">
+									<h:outputText value="Copago" />
+								</f:facet>
+								<h:inputText readonly="#{loginMBean.userHO}" value="#{orden.copago}">
+									<a4j:ajax value="change"
+										listener="#{ordenPagoMBean.actualizarDatosResumen}"
+										render="cantidadOaId montoId descuentoId ordenesTableId" />
+								</h:inputText>
+								<f:facet name="footer"><h:outputText id="fcopagototal" value="#{ordenPagoMBean.valorCopago}"/></f:facet>
+							</rich:column>
+							<rich:column width="150px">
+								<f:facet name="header">
+									<h:outputText value="Bonificación" />
+								</f:facet>
+								<h:inputText readonly="#{loginMBean.userHO}" value="#{orden.bonificacion}">
+									<a4j:ajax value="change"
+										listener="#{ordenPagoMBean.actualizarDatosResumen}"
+										render="cantidadOaId montoId descuentoId ordenesTableId" />
+								</h:inputText>
+								<f:facet name="footer"><h:outputText id="fboniftotal" value="#{ordenPagoMBean.totalBonificacion}"/></f:facet>
+							</rich:column>
+							<rich:column width="150px">
+								<f:facet name="header">
+									<h:outputText value="Estado" />
+								</f:facet>
+								<h:inputText readonly="#{loginMBean.userHO}" value="#{orden.estado}" />
+							</rich:column>
+							<rich:column width="150px">
+								<f:facet name="header">
+									<h:outputText value="Rut Titular" />
+								</f:facet>
+								<h:inputText readonly="#{loginMBean.userHO}" value="#{orden.titular.rut}"  styleClass="rutFormatClass"/>
+							</rich:column>
+							<rich:column width="150px">
+								<f:facet name="header">
+									<h:outputText value="Nombre Titular" />
+								</f:facet>
+								<h:inputText readonly="#{loginMBean.userHO}" value="#{orden.titular.nombre}">
+								<a4j:ajax event="keyup"
+										listener="#{ordenPagoMBean.addRowLastColumn}" execute="formOrdenPagoId"
+										render="ordenesTableId cantidadOaId montoId descuentoId"/>
+									<a4j:ajax event="change"
+										listener="#{ordenPagoMBean.addRowLastColumn}" execute="formOrdenPagoId"
+										render="ordenesTableId cantidadOaId montoId descuentoId" />
+									<f:attribute name="rowIndexId" value="#{rowKeyVar}" />
+								</h:inputText>
+							</rich:column>
+						</rich:extendedDataTable>
+						<h:panelGrid columns="6">
+							<h:outputLabel value="Cantidad OA: " for="cantidadOaId" />
+							<h:inputText id="cantidadOaId" readonly="true"
+								value="#{ordenPagoMBean.ordenes.size() -1 }" />
+							<h:outputLabel value="Monto: " for="montoId" />
+							<h:inputText id="montoId" value="#{ordenPagoMBean.totalvalor}"
+								readonly="true" />
+							<h:outputLabel value="Descuento: " for="descuentoId" />
+							<h:inputText id="descuentoId" readonly="true"
+								value="#{ordenPagoMBean.totalBonificacion}" />
+						</h:panelGrid>
+					</rich:panel>
+					
+					<h:commandButton value="Nuevo" onclick="if(#{cobradorMBean.nuevoFolio}){#{rich:component(':confirmacionGuardarCambiosPopupId')}.show()} else {#{cobradorMBean.prepareNuevo()}}" >
+					  <f:ajax immediate="true" render="@form :facesMessagesId" />
+					</h:commandButton>
+
+					<a4j:commandButton value="Eliminar"
+						onclick="#{rich:component(':confirmacionEliminarPopupId')}.show();" rendered="#{loginMBean.adminHO}"
+						immediate="true" render="@form :facesMessagesId">
+					</a4j:commandButton>
+
+					<h:commandButton value="Grabar"
+						onclick="#{rich:component(':messagesPopup')}.show()"
+						actionListener="#{cobradorMBean.guardarRcm}" rendered="#{loginMBean.adminHO}">
+						<f:ajax immediate="true" execute="@form" render="@form folioId :facesMessagesId" />
+					</h:commandButton>
+					
+					<!--CONFIGURACIONES DE SOPORTE PARA FORMATEO EN EL LADO DEL CLIENTE -->
+					<rich:jQuery selector=".rutFormatClass" timing="domready"
+						query="mask('99.999.999-A')" />
+					<!--FIN CONFIGURACIONES DE SOPORTE PARA FORMATEO EN EL LADO DEL CLIENTE -->
+				</h:form>
+			</rich:panel>
+			<!-- FIN DE LA PANTALLA PRINCIPAL -->
+
+			<!--INICIO DE LOS POPUPS -->
+			<rich:popupPanel id="confirmacionEliminarPopupId" autosized="true"
+				header="Advertencia"
+				onmaskclick="#{rich:component('confirmacionEliminarPopupId')}.hide()"
+				resizeable="false">
+
+				<rich:panel id="confirmacionEliminarId">
+					¿Está seguro que desea eliminar el registro?
+				</rich:panel>
+				<h:form>
+					<a4j:commandButton value="Sí"
+						actionListener="#{cobradorMBean.eliminar}" execute=":formGralId" render=":formGralId :facesMessagesId" oncomplete="#{rich:component('confirmacionEliminarPopupId')}.hide()"/>
+					<a4j:commandButton value="No"
+						onclick="#{rich:component('confirmacionEliminarPopupId')}.hide()">
+					</a4j:commandButton>
+				</h:form>
+			</rich:popupPanel>
+			
+			<!-- MENSAJE DE EDICION -->
+			<rich:popupPanel id="confirmacionEditarPopupId" autosized="true"
+				header="Advertencia"
+				onmaskclick="#{rich:component('confirmacionEliminarPopupId')}.hide()"
+				resizeable="false">
+
+				<rich:panel id="confirmacionEditarId">
+					Este RCM ya existe.¿Desea Editarla?
+				</rich:panel>
+				<h:form>
+					<h:commandButton value="Sí"
+						actionListener="#{cobradorMBean.resolveRcm()}">
+					</h:commandButton>
+					<h:commandButton value="No"
+						onclick="#{rich:component('confirmacionEditarPopupId')}.hide()">
+					</h:commandButton>
+				</h:form>
+			</rich:popupPanel>
+			
+			
+			<!-- POPUP GUARDAR CAMBIOS EN DOCUMENTO NUEVO -->
+			<rich:popupPanel id="confirmacionGuardarCambiosPopupId" autosized="true"
+				header="Advertencia"
+				onmaskclick="#{rich:component('confirmacionGuardarCambiosPopupId')}.hide()"
+				resizeable="false">
+
+				<rich:panel id="confirmacionGuardarCambiosId">
+					¿Desea Guardar los Cambios pendientes en esta RCM?
+				</rich:panel>
+				<h:form>
+				    <a4j:commandButton value="Sí"
+						onclick="#{rich:component(':messagesPopup')}.show()"
+						actionListener="#{cobradorMBean.guardarRcm}"
+						execute=":formGralId" render=":formGralId:folioId :facesMessagesId" 
+						oncomplete="#{rich:component('confirmacionGuardarCambiosPopupId')}.hide()">
+					</a4j:commandButton>
+					<a4j:commandButton value="No"
+						actionListener="#{cobradorMBean.prepareNuevo}"
+						immediate="true" render=":formGralId :facesMessagesId"
+						oncomplete="#{rich:component('confirmacionGuardarCambiosPopupId')}.hide()">
+					</a4j:commandButton>
+					<a4j:commandButton value="Cancelar"
+						onclick="#{rich:component('confirmacionGuardarCambiosPopupId')}.hide()">
+					</a4j:commandButton>
+				</h:form>
+			</rich:popupPanel>
+			
+			
+			
+			
+			<!-- Mensajes del Sistema y Otros Popups -->
+			<rich:popupPanel id="messagesPopup" modal="true" autosized="true"
+				onmaskclick="#{rich:component(':messagesPopup')}.hide()">
+				<f:facet name="header">
+					<h:outputText value="Mensajes del sistema" />
+				</f:facet>
+
+				<rich:messages id="facesMessagesId" showDetail="true" />
+				<br />
+				<br />
+				<br />
+				<h:outputLink value="#" id="btnCerraPopupMensajesId"
+					onclick="#{rich:component(':messagesPopup')}.hide(); return false;">
+					<h:outputText value="OK" />
+				</h:outputLink>
+			</rich:popupPanel>
+			<rich:popupPanel id="agenciasPopupId" autosized="true"
+				onmaskclick="#{rich:component(':agenciasPopupId')}.hide()"
+				resizeable="false">
+
+				<rich:panel header="Listado de Agencias" id="agenciasPopupDataId">
+					<h:form>
+						<rich:extendedDataTable value="#{agenciaMBean.agencias}" var="ag"
+							selection="#{cobradorMBean.agenciaSelection}" rowKeyVar="row"
+							style="height:300px" selectionMode="single">
+							<a4j:ajax execute="@form" event="selectionchange"
+								listener="#{cobradorMBean.selectAgencia}" />
+							<rich:column>
+								<f:facet name="header">
+									<h:outputText value="Código" />
+								</f:facet>
+								<h:outputText value="#{ag.id}" />
+							</rich:column>
+							<rich:column>
+								<f:facet name="header">
+									<h:outputText value="Nombre" />
+								</f:facet>
+								<h:outputText value="#{ag.descripcion}" />
+							</rich:column>
+						</rich:extendedDataTable>
+						<h:commandButton value="Aceptar">
+							<a4j:ajax listener="#{cobradorMBean.confirmarAgenciaSelect}"
+								oncomplete="#{rich:component(':agenciasPopupId')}.hide(); return false;"
+								render=":formGralId:agenciaRecId :formGralId:nombreAgenciaRecepId :formGralId:agenciaPagoId :formGralId:agenciaPagoAjaxId" />
+						</h:commandButton>
+						<h:commandButton value="Cerrar"
+							onclick="#{rich:component(':agenciasPopupId')}.hide(); return false;">
+							<a4j:ajax execute="@none" />
+						</h:commandButton>
+					</h:form>
+				</rich:panel>
+
+
+			</rich:popupPanel>
+			<rich:popupPanel id="tipoPagoPopupId" autosized="true"
+				onmaskclick="#{rich:component(':tipoPagoPopupId')}.hide()"
+				resizeable="false">
+
+				<rich:panel header="Tipos de pago" id="tipoPagoPopupDataId">
+					<h:form>
+						<rich:extendedDataTable value="#{tipoPagoMBean.tiposPago}"
+							var="tp" selection="#{cobradorMBean.tipoPagoSelection}"
+							rowKeyVar="row" style="height:300px" selectionMode="single">
+							<a4j:ajax execute="@form" event="selectionchange"
+								listener="#{cobradorMBean.selectTipoPago}" />
+							<rich:column>
+								<f:facet name="header">
+									<h:outputText value="Código" />
+								</f:facet>
+								<h:outputText value="#{tp.id}" />
+							</rich:column>
+							<rich:column>
+								<f:facet name="header">
+									<h:outputText value="Nombre" />
+								</f:facet>
+								<h:outputText value="#{tp.nombre}" />
+							</rich:column>
+						</rich:extendedDataTable>
+						<h:commandButton value="Aceptar">
+							<a4j:ajax listener="#{cobradorMBean.confirmarTipoPagoSelect}"
+								oncomplete="#{rich:component(':tipoPagoPopupId')}.hide(); return false;"
+								render=":formGralId:tipoPagoId :formGralId:nombreTipoPagoId" />
+						</h:commandButton>
+						<h:commandButton value="Cerrar"
+							onclick="#{rich:component(':tipoPagoPopupId')}.hide(); return false;">
+							<a4j:ajax execute="@none" />
+						</h:commandButton>
+					</h:form>
+				</rich:panel>
+				<h:outputLink value="#"
+					onclick="#{rich:component(':tipoPagoPopupId')}.hide(); return false;">
+					<h:outputText value="Cerrar" />
+				</h:outputLink>
+			</rich:popupPanel>
+			<!-- FIN DE LOS POPUPS -->
+
+			<!--CONFIGURACIONES DE HOTKEYS -->
+			<rich:hotKey key="f9"
+				onkeyup="#{rich:component(':agenciasPopupId')}.show();">
+			</rich:hotKey>
+			<rich:hotKey key="f8"
+				onkeyup="#{rich:component(':tipoPagoPopupId')}.show();">
+			</rich:hotKey>
+			<!-- FIN CONFIGURACION HOTKEYS -->
+
+		</ui:define>
+	</ui:composition>
+</body>
+</html>
