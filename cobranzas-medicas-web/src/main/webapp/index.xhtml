@@ -47,6 +47,10 @@
 							<rich:calendar enableManualInput="true" id="fechaRecId"
 								label="Fecha Recepción RCM" datePattern="dd/MM/yyyy"
 								required="true" value="#{cobradorMBean.rcm.fechaRecepcion}">
+							
+								<a4j:ajax event="change" execute="@this" render="fechaRecId" />
+								
+								
 							</rich:calendar>
 
 							<h:outputLabel value="Fecha registro: " for="fechaRegId" />
