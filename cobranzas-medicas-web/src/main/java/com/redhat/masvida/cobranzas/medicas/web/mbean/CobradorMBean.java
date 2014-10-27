@@ -19,16 +19,16 @@ import org.slf4j.LoggerFactory;
 
 import com.redhat.masvida.cobranzas.medicas.common.exception.AgenciaNoEncontradaException;
 import com.redhat.masvida.cobranzas.medicas.common.exception.TipoPagoNoEncontradaException;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.AgenciaVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.CobradorVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.PagoVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.RcmVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.RecepcionCobranzaMedicaVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.TipoPagoVO;
 import com.redhat.masvida.cobranzas.medicas.web.mbean.base.BaseManagedBean;
 import com.redhat.masvida.cobranzas.medicas.web.rest.client.FuseRestClient;
 import com.redhat.masvida.cobranzas.medicas.web.util.JsfUtil;
 import com.redhat.masvida.cobranzas.medicas.web.util.RichFacesUtil;
+import com.redhat.masvida.vo.AgenciaVO;
+import com.redhat.masvida.vo.CobradorVO;
+import com.redhat.masvida.vo.PagoVO;
+import com.redhat.masvida.vo.RcmVO;
+import com.redhat.masvida.vo.RecepcionCobranzaMedicaVO;
+import com.redhat.masvida.vo.TipoPagoVO;
 
 @ManagedBean
 @ViewScoped
@@ -49,6 +49,7 @@ public class CobradorMBean extends BaseManagedBean implements Serializable {
 	private boolean nuevoFolio;
 	private AgenciaVO preselectedAgencia;
 	private TipoPagoVO preselectedTipoPago;
+	private boolean found;
 
 	@ManagedProperty("#{agenciaMBean}")
 	private AgenciaMBean agenciaMBean;
@@ -73,6 +74,14 @@ public class CobradorMBean extends BaseManagedBean implements Serializable {
 
 		// cargamos el tipo de pago por defecto del cliente
 		this.pago.setTipoPago(client.getTipoPagoDefecto());
+
+		System.out.println("Pago defecto en BEAN: "
+				+ this.pago.getTipoPago().getId() + " "
+				+ this.pago.getTipoPago().getNombre());
+
+		System.out.println("Pago defecto: "
+				+ client.getTipoPagoDefecto().getId() + " "
+				+ client.getTipoPagoDefecto().getNombre());
 
 		// this.ordenes = new ArrayList<OrdenAtencionVO>();
 		nuevoFolio = true; // incialmente siempre es nuevo
@@ -101,13 +110,16 @@ public class CobradorMBean extends BaseManagedBean implements Serializable {
 	}
 
 	public void resolveTipoPago(AjaxBehaviorEvent event) {
-		String nombrePago;
+
 		try {
-			Integer id = this.pago.getTipoPago().getId();
-			nombrePago = client.getNombreTipoPago(id);
-			this.pago.getTipoPago().setNombre(nombrePago);
+
+			TipoPagoVO tipoPago = client.getTipoPago(this.pago.getTipoPago()
+					.getId());
+			this.pago.setTipoPago(tipoPago);
+
 		} catch (TipoPagoNoEncontradaException e) {
 			LOG.info("No encontre Pago!!");
+
 			JsfUtil.addMessage(
 					event.getComponent().getClientId(),
 					"Pago no válido",
@@ -119,20 +131,28 @@ public class CobradorMBean extends BaseManagedBean implements Serializable {
 	}
 
 	public void prepareNuevo() {
+		System.out.println("prepareNuevo");
+
 		// limpiamos todo
 		init();
-		//Se reestablecen los valores correspondientes de las Ordenes de Atención Pagadas
+		// Se reestablecen los valores correspondientes de las Ordenes de
+		// Atención Pagadas
 		ordenPagoMBean.setTotalvalor(null);
 		ordenPagoMBean.setValorCopago(null);
 		ordenPagoMBean.setTotalBonificacion(null);
 		ordenPagoMBean.init();
+
+		System.out.println("Folio prepareNuevo: " + this.getRcm().getFolio());
+
 	}
-	
+
 	public void eliminar() {
 		try {
+			System.out.println("Eliminando el RCM con ID: "
+					+ this.rcm.getFolio());
 			client.deleteRcm(this.rcm, pago, ordenPagoMBean.getOrdenes());
 			prepareNuevo();
-			
+
 		} catch (Exception ex) {
 			JsfUtil.addMessage(
 					null,
@@ -163,7 +183,7 @@ public class CobradorMBean extends BaseManagedBean implements Serializable {
 		}
 		dataTable.setRowKey(originalKey);
 	}
-	
+
 	public void selectTipoPago(AjaxBehaviorEvent event) {
 		UIExtendedDataTable dataTable = (UIExtendedDataTable) event
 				.getComponent();
@@ -176,27 +196,29 @@ public class CobradorMBean extends BaseManagedBean implements Serializable {
 		}
 		dataTable.setRowKey(originalKey);
 	}
-	
+
 	public void confirmarTipoPagoSelect(AjaxBehaviorEvent event) {
 		TipoPagoVO tp = preselectedTipoPago;
 		this.pago.setTipoPago(tp);
 	}
-
 
 	public void confirmarAgenciaSelect(AjaxBehaviorEvent event) {
 		AgenciaVO ag = preselectedAgencia;
 		this.rcm.setAgenciaRecepcion(ag);
 		this.pago.setAgenciaPago(ag);
 	}
-	
-	public void resolveRcm(AjaxBehaviorEvent event) {
+
+	public void resolveRcm() {
+		System.out.println("Buscando el RCM con ID para editar: "
+				+ this.rcm.getFolio());
 		RcmVO rcmVO = client.findFolio(this.rcm.getFolio());
 		try {
 			this.rcm = rcmVO.getRcm();
 			this.pago = rcmVO.getPago();
 			this.ordenPagoMBean.setOrdenes(rcmVO.getOrdenes());
-			
-			//RW: Se actualizan los valores de totalpago, bonif y copago al editar un RCM existente.
+
+			// RW: Se actualizan los valores de totalpago, bonif y copago al
+			// editar un RCM existente.
 			this.ordenPagoMBean.actualizarDatosResumen();
 		} catch (Exception ex) {// Si cae aca es por que el folio es nuevo
 			Integer oldFOlio = this.rcm.getFolio();
@@ -205,14 +227,37 @@ public class CobradorMBean extends BaseManagedBean implements Serializable {
 		}
 	}
 
-	public void guardarRcm() {
-		client.guardarRcm(this.rcm, this.pago, ordenPagoMBean.getOrdenes());
+	public void findRcm(AjaxBehaviorEvent event) {
+		System.out.println("Buscando el RCM con ID: " + this.rcm.getFolio());
+		this.found = false;
+		RcmVO rcmVO = client.findFolio(this.rcm.getFolio());
+		try {
+			this.rcm = rcmVO.getRcm();
+			if (this.rcm != null) {
+				this.found = true;
+			}
+		} catch (Exception ex) {// Si cae aca es por que el folio es nuevo
+		}
+	}
 
-		// TODO: metodo cliente para guardar todo
-		JsfUtil.addMessage(null, "Operación exitosa",
-				"Los datos se han registrados exitosamente",
-				FacesMessage.SEVERITY_INFO);
-		this.nuevoFolio = false;
+	public void guardarRcm() {
+		// Verificamos folio RCM para ver que esta pasando
+		System.out.println("Guardando el RCM con ID: " + this.rcm.getFolio());
+		if (this.rcm.getFolio() != null) {
+			client.guardarRcm(this.rcm, this.pago, ordenPagoMBean.getOrdenes());
+
+			// TODO: metodo cliente para guardar todo
+			JsfUtil.addMessage(null, "Operación exitosa:",
+					" Los datos se han registrado exitosamente",
+					FacesMessage.SEVERITY_INFO);
+			this.nuevoFolio = false;
+		} else {
+			// TODO Desglosar mensajes de campos faltantes
+			JsfUtil.addMessage(null, "Operación Fallida:",
+					" Se han detectado campo(s) no completados. Revisar RCM.",
+					FacesMessage.SEVERITY_ERROR);
+			// this.nuevoFolio = false;
+		}
 	}
 
 	public void setClient(FuseRestClient client) {
@@ -269,6 +314,14 @@ public class CobradorMBean extends BaseManagedBean implements Serializable {
 
 	public void setTipoPagoSelection(Collection<Object> tipoPagoSelection) {
 		this.tipoPagoSelection = tipoPagoSelection;
+	}
+
+	public boolean isFound() {
+		return found;
+	}
+
+	public void setFound(boolean found) {
+		this.found = found;
 	}
 
 }

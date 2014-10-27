@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 import javax.annotation.PostConstruct;
 import javax.faces.application.FacesMessage;
@@ -15,18 +16,12 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.redhat.masvida.cobranzas.medicas.common.exception.AgenciaNoEncontradaException;
 import com.redhat.masvida.cobranzas.medicas.common.exception.FolioOrdeAtencionNoEncontradoException;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.AgenciaVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.CobradorVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.OrdenAtencionVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.PagoVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.PersonaVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.RecepcionCobranzaMedicaVO;
 import com.redhat.masvida.cobranzas.medicas.web.mbean.base.BaseManagedBean;
 import com.redhat.masvida.cobranzas.medicas.web.rest.client.FuseRestClient;
 import com.redhat.masvida.cobranzas.medicas.web.util.JsfUtil;
-import com.redhat.masvida.cobranzas.medicas.web.util.RichFacesUtil;
+import com.redhat.masvida.vo.OrdenAtencionVO;
+import com.redhat.masvida.vo.PersonaVO;
 
 @ManagedBean
 @ViewScoped
@@ -41,6 +36,7 @@ public class OrdenPagoMBean extends BaseManagedBean implements Serializable {
 	private Double totalvalor;
 	private Double valorCopago;
 	private Integer totalBonificacion;
+	private boolean errorFlag;
 
 	private List<OrdenAtencionVO> ordenes;
 
@@ -73,12 +69,45 @@ public class OrdenPagoMBean extends BaseManagedBean implements Serializable {
 		}
 	}
 
+	public void eliminarOA(AjaxBehaviorEvent event) {
+		// Verificamos la ROW ID correspondiente
+		Integer rowIndex = (Integer) event.getComponent().getAttributes()
+				.get("rowIndexId");
+		LOG.info("A Eliminar Fila: " + rowIndex + " con Valor: "
+				+ rowIndex.intValue());
+
+		try {
+			// Simularemos una excepción a partir de un simble DivideByZero
+				Random r = new Random();
+				int rnumber = r.nextInt(2);
+				int result = 10 / rnumber;
+			
+			// Desvinculamos la OA del RCM
+			this.ordenes.remove(rowIndex.intValue());
+			actualizarDatosResumen();
+			this.errorFlag = false;
+			if (this.ordenes.size() <= 0) {
+				agregarNuevaOrdenAlFinal();
+			}
+		} catch (Exception e) {
+			LOG.info("Simulando excepción...");
+			/*
+			 * Fijamos desde aquí el valor de flagError para crear las
+			 * condiciones necesarias para levantar el popup de error definido
+			 * en el index. Esto, dado a que JsfUtil.addMessage no está
+			 * funcionando desde acá...
+			 */
+			this.errorFlag = true;
+		}
+	}
+
 	public void actualizarDatosResumen() {
 		this.totalBonificacion = 0;
 		this.totalvalor = 0d;
 		this.valorCopago = 0d;
 		for (OrdenAtencionVO oa : this.ordenes) {
-			this.totalBonificacion += oa.getBonificacion() != null ? oa.getBonificacion() : 0;
+			this.totalBonificacion += oa.getBonificacion() != null ? oa
+					.getBonificacion() : 0;
 			this.totalvalor += oa.getValor() != null ? oa.getValor() : 0;
 			this.valorCopago += oa.getCopago() != null ? oa.getCopago() : 0;
 		}
@@ -104,7 +133,7 @@ public class OrdenPagoMBean extends BaseManagedBean implements Serializable {
 
 			// finalmente , si encuentra algo arreglamos la lista para crear un
 			// nuevo item
-			//agregarNuevaOrdenAlFinal();
+			// agregarNuevaOrdenAlFinal();
 			actualizarDatosResumen();
 
 		} catch (NumberFormatException nfe) {
@@ -114,21 +143,17 @@ public class OrdenPagoMBean extends BaseManagedBean implements Serializable {
 					FacesMessage.SEVERITY_ERROR);
 		} catch (FolioOrdeAtencionNoEncontradoException foane) {
 			// significa que se va a agregar uno
-			agregarNuevaOrdenAlFinal();
+			// agregarNuevaOrdenAlFinal();
 		}
 	}
-	
-	public void addRowLastColumn(AjaxBehaviorEvent event) {
-			// Verificamos que sea integer
-			Integer rowIndex = (Integer) event.getComponent().getAttributes()
-					.get("rowIndexId");
 
-			// finalmente , si encuentra algo arreglamos la lista para crear un
-			// nuevo item
-			if(rowIndex!=null){
-			agregarNuevaOrdenAlFinal();
-			actualizarDatosResumen();
-			}
+	/*
+	 * Método para agregar Fila a la Tabla de Ordenes de Atención.
+	 */
+	public void addRowLastColumn() {
+		LOG.info("Añadiendo nueva OA a la tabla...");
+		agregarNuevaOrdenAlFinal();
+		// actualizarDatosResumen();
 	}
 
 	public void setClient(FuseRestClient client) {
@@ -166,4 +191,13 @@ public class OrdenPagoMBean extends BaseManagedBean implements Serializable {
 	public void setOrdenes(List<OrdenAtencionVO> ordenes) {
 		this.ordenes = ordenes;
 	}
+
+	public boolean isErrorFlag() {
+		return errorFlag;
+	}
+
+	public void setErrorFlag(boolean errorFlag) {
+		this.errorFlag = errorFlag;
+	}
+
 }

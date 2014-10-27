@@ -10,10 +10,14 @@ import java.util.List;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.switchyard.component.bean.Service;
 
 //import cl.masvida.poc.ejb.RCMFacade;
 //import cl.masvida.poc.ejb.RCMFacadeBean;
+
+
 
 
 
@@ -26,6 +30,7 @@ import com.redhat.masvida.vo.OrdenAtencionVO;
 import com.redhat.masvida.vo.PagoVO;
 import com.redhat.masvida.vo.PersonaVO;
 import com.redhat.masvida.vo.RcmVO;
+import com.redhat.masvida.vo.RecepcionCobranzaMedicaVO;
 import com.redhat.masvida.vo.TipoPagoVO;
 
 
@@ -35,15 +40,19 @@ import com.redhat.masvida.vo.TipoPagoVO;
 @Service(Rcm.class)
 public class RcmBean implements Rcm {
 	private static HashMap<Integer,RcmVO> dbRCM;
+
+	
+	private static final Logger LOG = LoggerFactory
+			.getLogger(RcmBean.class);	
+	
 	
 	@Override
 	public RcmVO buscarPorFolio(RcmVO rcmIn) {
 
 		RcmVO rcmVO = null;
-		RcmVO rcmOut = null;
 
-		System.out.println("Numero de folio: " + rcmIn.getRcm().getFolio()
-				+ " desde SwitchYard!");
+		//		System.out.println("Numero de folio: " + rcmIn.getRcm().getFolio()
+//				+ " desde SwitchYard!");
 		// se retorna RCM con datos Dummy. Reemplazar esta l�gica con busqueda
 		// en BD.
 		try {
@@ -53,7 +62,7 @@ public class RcmBean implements Rcm {
 
 			// rcmVO = dbRcm.get(rcmIn.getRcm().getFolio());
 
-			rcmVO = rcmIn;
+//			rcmVO = rcmIn;
 			
 //			List<OrdenAtencionVO> lsOrdenAtencion = new ArrayList<OrdenAtencionVO>();
 //			for (int i = 0; i < 200; i++) {
@@ -103,7 +112,8 @@ public class RcmBean implements Rcm {
 					RCMFacadeBean.class.getSimpleName(), 
 					RCMFacade.class.getName());
 			
-			rcmVO = rcmFacade.buscarRcm(new BigDecimal(rcmIn.getRcm().getFolio()));
+
+			rcmVO = rcmFacade.buscarRcm(new BigDecimal( rcmIn.getRcm().getFolio()  ) );
 			
 			System.out.println("Busqueda RCM finalizada!");
 			
@@ -135,24 +145,24 @@ public class RcmBean implements Rcm {
 
 
 	@Override
-	public TipoPagoVO[] obtenerTipoPago() {
-		TipoPagoVO[] arrTipoPago = null;
+	public List<TipoPagoVO> obtenerTiposPago() {
+		List<TipoPagoVO> lsTipoPago = null;
 		
 		try{
-			arrTipoPago = new TipoPagoVO[5];
-			for(int i=0;i<5;i++){
-				arrTipoPago[i] = new TipoPagoVO();
-				arrTipoPago[i].setId(i);
-				arrTipoPago[i].setNombre("Tipo Pago "+ i );
-			}
+
+			RCMFacade rcmFacade = (RCMFacade) lookup(
+					"rcm-ejb", 
+					RCMFacadeBean.class.getSimpleName(), 
+					RCMFacade.class.getName());
 			
+			lsTipoPago = rcmFacade.getAllTipoPago();
 			
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 		
 		
-		return arrTipoPago;
+		return lsTipoPago;
 	}
 
 
@@ -160,15 +170,19 @@ public class RcmBean implements Rcm {
 	
 	@Override
 	public void guardarRcm(RcmVO rcmVO) throws Exception {
-		if(dbRCM==null){
-			System.out.println("dbRCM es nulo en Guardar");
-			dbRCM = new HashMap<Integer, RcmVO>();
-			
-			System.out.println( "Folio desde guardar: " + rcmVO.getRcm().getFolio() );
-
-		}
 		
-		dbRCM.put(rcmVO.getRcm().getFolio(), rcmVO );
+		// llamada a capa de negocio (EJB)
+		RCMFacade rcmFacade = (RCMFacade) lookup(
+				"rcm-ejb", 
+				RCMFacadeBean.class.getSimpleName(), 
+				RCMFacade.class.getName());
+		
+		rcmFacade.guardarRcm( rcmVO );
+		
+		System.out.println("Busqueda RCM finalizada!");
+		
+		
+		
 		
 	}
 
@@ -200,6 +214,35 @@ public class RcmBean implements Rcm {
 		}
 		
 		return ejbReference;
+	}
+
+
+	@Override
+	public TipoPagoVO buscarTipoPago(TipoPagoVO tipoPagoVO) {
+		
+		try{
+			
+
+			RCMFacade rcmFacade = (RCMFacade) lookup(
+					"rcm-ejb", 
+					RCMFacadeBean.class.getSimpleName(), 
+					RCMFacade.class.getName());
+			
+	
+			tipoPagoVO = rcmFacade.buscarTipoPago( new BigDecimal( tipoPagoVO.getId() ) );
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		return tipoPagoVO;
+	}
+
+
+	@Override
+	public TipoPagoVO tipoPagoDefecto() {
+		TipoPagoVO tipoPagoVO = new TipoPagoVO();
+		tipoPagoVO.setId(2);
+		return this.buscarTipoPago(tipoPagoVO);
 	}	
 	
 	

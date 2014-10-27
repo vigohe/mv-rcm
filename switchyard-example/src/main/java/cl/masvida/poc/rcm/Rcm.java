@@ -1,5 +1,7 @@
 package cl.masvida.poc.rcm;
 
+import java.util.List;
+
 import com.redhat.masvida.vo.AgenciaVO;
 import com.redhat.masvida.vo.RcmVO;
 import com.redhat.masvida.vo.TipoPagoVO;
@@ -8,12 +10,16 @@ import com.redhat.masvida.vo.TipoPagoVO;
 
 public interface Rcm {
 
-	RcmVO buscarPorFolio(RcmVO folio);
+	RcmVO buscarPorFolio(RcmVO rcmVO);
 	
 	AgenciaVO[] obtenerAgencias();
 	
-	TipoPagoVO[] obtenerTipoPago();
+	List<TipoPagoVO> obtenerTiposPago();
 	
 	void guardarRcm(RcmVO rcmVO) throws Exception;
+	
+	TipoPagoVO buscarTipoPago(TipoPagoVO tipoPagoVO);
+	
+	TipoPagoVO tipoPagoDefecto();
 	
 }

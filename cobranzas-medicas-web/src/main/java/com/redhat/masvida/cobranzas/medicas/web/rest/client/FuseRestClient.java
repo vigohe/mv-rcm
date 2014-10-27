@@ -1,23 +1,27 @@
 package com.redhat.masvida.cobranzas.medicas.web.rest.client;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.ManagedBean;
 import javax.enterprise.context.RequestScoped;
+import javax.faces.bean.ManagedBean;
 import javax.inject.Inject;
 
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.redhat.masvida.cobranzas.medicas.common.exception.AgenciaNoEncontradaException;
 import com.redhat.masvida.cobranzas.medicas.common.exception.FolioOrdeAtencionNoEncontradoException;
 import com.redhat.masvida.cobranzas.medicas.common.exception.TipoPagoNoEncontradaException;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.AgenciaVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.OrdenAtencionVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.PagoVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.RcmVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.RecepcionCobranzaMedicaVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.TipoPagoVO;
+import com.redhat.masvida.cobranzas.medicas.web.util.RestClientCallUtil;
+import com.redhat.masvida.vo.AgenciaVO;
+import com.redhat.masvida.vo.OrdenAtencionVO;
+import com.redhat.masvida.vo.PagoVO;
+import com.redhat.masvida.vo.RcmVO;
+import com.redhat.masvida.vo.RecepcionCobranzaMedicaVO;
+import com.redhat.masvida.vo.TipoPagoVO;
 
 @ManagedBean
 @RequestScoped
@@ -27,6 +31,9 @@ public class FuseRestClient {
 
 	@Inject
 	private FuseRestDummyData db;
+
+	@Inject
+	private RestClientCallUtil restClientCallUtil;
 
 	public String getNombreAgencia(Integer id)
 			throws AgenciaNoEncontradaException {
@@ -51,16 +58,67 @@ public class FuseRestClient {
 	}
 
 	public List<AgenciaVO> findAllAgencias() {
-		// TODO definir la paginacion (lazy load)
-		return db.getAllAgencias();
+
+		AgenciaVO[] arrAgencias = null;
+		List<AgenciaVO> lsAgencias = new ArrayList<AgenciaVO>();
+
+		try {
+
+			String endpointURL = "http://localhost:8080/miRest/rcm/agencias";
+			String json = restClientCallUtil.callJsonRemoteRest(endpointURL);
+
+			ObjectMapper mapper = new ObjectMapper();
+			arrAgencias = mapper.readValue(json, AgenciaVO[].class);
+
+			for (AgenciaVO a : arrAgencias) {
+				lsAgencias.add(a);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return lsAgencias;
 	}
 
 	public TipoPagoVO getTipoPagoDefecto() {
-		return db.getTipoPagoDefecto();
+		//db.buildTipoPago();
+		
+		TipoPagoVO tipoPagoVO=null;
+		
+		try {
+			String endpointURL = "http://localhost:8080/miRest/rcm/tipopagodefecto";
+			String json = restClientCallUtil.callJsonRemoteRest(endpointURL);
+			
+			ObjectMapper mapper = new ObjectMapper();
+			tipoPagoVO = mapper.readValue(json,  TipoPagoVO.class );
+
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		return tipoPagoVO;
 	}
 
 	public List<TipoPagoVO> findAllTipoPagoValido() {
-		return db.getAllTipoPago();
+		List<TipoPagoVO> lsTiposPago = new ArrayList<TipoPagoVO>();
+
+		try {
+
+			String endpointURL = "http://localhost:8080/miRest/rcm/tipospago";
+			String json = restClientCallUtil.callJsonRemoteRest(endpointURL);
+
+			ObjectMapper mapper = new ObjectMapper();
+			lsTiposPago = mapper.readValue(json,  new TypeReference<List<TipoPagoVO>>() {});
+
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return lsTiposPago;
 	}
 
 	public OrdenAtencionVO loadOrdenAtencion(Integer folioOA)
@@ -71,11 +129,43 @@ public class FuseRestClient {
 
 	public void guardarRcm(RecepcionCobranzaMedicaVO rcm, PagoVO pago,
 			List<OrdenAtencionVO> ordenes) {
-		db.guardarRcm(rcm, pago, ordenes);
+
+		try {
+
+			RcmVO rcmVO = new RcmVO();
+			rcmVO.setOrdenes(ordenes);
+			rcmVO.setPago(pago);
+			rcmVO.setRcm(rcm);
+
+			String endpointURL = "http://localhost:8080/miRest/rcm/guardar";
+			restClientCallUtil.callJsonRemoteRest(endpointURL, rcmVO);
+
+		} catch (Exception e) {
+			LOG.info("ERROR: FuseRestClient guardarRcm");
+			e.printStackTrace();
+		}
+
 	}
 
 	public RcmVO findFolio(Integer folio) {
-		return db.findFolio(folio);
+		RcmVO rcmVO = null;
+		try {
+
+			String endpointURL = "http://localhost:8080/miRest/rcm/buscar/"
+					+ folio;
+			String json = restClientCallUtil.callJsonRemoteRest(endpointURL);
+
+			ObjectMapper mapper = new ObjectMapper();
+			rcmVO = mapper.readValue(json, RcmVO.class);
+
+			LOG.debug("Desde RcmVO[folio]: " + rcmVO.getRcm().getFolio());
+
+		} catch (Exception e) {
+			LOG.info("No existe la RCM");
+			e.printStackTrace();
+		}
+
+		return rcmVO;
 	}
 
 	public void deleteRcm(RecepcionCobranzaMedicaVO rcm, PagoVO pago,
@@ -83,8 +173,7 @@ public class FuseRestClient {
 		db.deleteRcm(rcm);
 	}
 
-	public String getNombreTipoPago(Integer id)
-			throws TipoPagoNoEncontradaException {
+	public String getNombreTipoPago(Integer id) throws TipoPagoNoEncontradaException {
 		try {
 			return db.getNombreTipoPago(id);
 		} catch (NullPointerException e) { // TODO: definir errores de negocio
@@ -92,4 +181,31 @@ public class FuseRestClient {
 		}
 
 	}
+	
+	
+
+	public TipoPagoVO getTipoPago(Integer id) throws TipoPagoNoEncontradaException {
+		TipoPagoVO tipoPagoVO = null;	
+		
+		try{
+	
+				String endpointURL = "http://localhost:8080/miRest/rcm/buscartipopago/" + id;
+				String json = restClientCallUtil.callJsonRemoteRest(endpointURL);
+	
+				ObjectMapper mapper = new ObjectMapper();
+				tipoPagoVO = mapper.readValue(json, TipoPagoVO.class);
+						
+						
+						
+				if ( tipoPagoVO == null ){
+					throw new TipoPagoNoEncontradaException();	
+				}
+				
+				return tipoPagoVO;
+
+			} catch (Exception e) { // TODO: definir errores de negocio
+				throw new TipoPagoNoEncontradaException();
+			}
+	}
+
 }

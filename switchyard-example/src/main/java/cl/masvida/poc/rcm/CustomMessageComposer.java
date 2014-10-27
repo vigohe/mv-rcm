@@ -13,6 +13,7 @@ import org.switchyard.component.resteasy.composer.RESTEasyMessageComposer;
 
 import com.redhat.masvida.vo.RcmVO;
 import com.redhat.masvida.vo.RecepcionCobranzaMedicaVO;
+import com.redhat.masvida.vo.TipoPagoVO;
 
 public class CustomMessageComposer extends RESTEasyMessageComposer {
 
@@ -44,18 +45,33 @@ public class CustomMessageComposer extends RESTEasyMessageComposer {
 			rcmVO = new RcmVO();
 			RecepcionCobranzaMedicaVO cobranzaMedicaVO = new RecepcionCobranzaMedicaVO();
 			cobranzaMedicaVO.setFolio(Integer.parseInt((String) source.getParameters()[0]));
-			cobranzaMedicaVO.setFechaRecepcion(stringToDate((String) source.getParameters()[1]));
-			cobranzaMedicaVO.setFechaRegistro(stringToDate((String) source.getParameters()[2]));
+//			cobranzaMedicaVO.setFechaRecepcion(stringToDate((String) source.getParameters()[1]));
+//			cobranzaMedicaVO.setFechaRegistro(stringToDate((String) source.getParameters()[2]));
 			rcmVO.setRcm(cobranzaMedicaVO);
-
+			message.setContent(rcmVO);
 		}
 		
-		System.out.println((String) message.toString());
+		
+		if (source.getOperationName().equals("buscarTipoPago") ) {
+
+			// se recorren e imprimen por cosola los parametros ingresados en la URL...
+			for (int i = 0; i < source.getParameters().length; i++) {
+				System.out.println("================== Param [" + i + "]: "
+						+ source.getParameters()[i]);
+			}
+			
+			TipoPagoVO tipoPagoVO = new TipoPagoVO();
+			tipoPagoVO.setId(  Integer.parseInt((String) source.getParameters()[0]) );
+			message.setContent(tipoPagoVO);
+		}
+		
+		
+		//System.out.println((String) message.toString());
 
 		// se asocia el contenido dentro del mensaje
-		message.setContent(rcmVO);
 		
-		System.out.println((String) message.toString());
+		
+		//System.out.println((String) message.toString());
 
 		return message;
 	}

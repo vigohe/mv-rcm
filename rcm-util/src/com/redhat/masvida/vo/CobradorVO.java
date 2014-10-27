@@ -3,6 +3,10 @@ package com.redhat.masvida.vo;
 import java.io.Serializable;
 
 public class CobradorVO implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private Integer rut;
 	private String nombre;
 

@@ -5,7 +5,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Random;
 
 import javax.annotation.ManagedBean;
@@ -17,13 +16,13 @@ import org.slf4j.LoggerFactory;
 
 import com.redhat.masvida.cobranzas.medicas.common.exception.FolioOrdeAtencionNoEncontradoException;
 import com.redhat.masvida.cobranzas.medicas.common.util.RutDigitoVerificadorUtil;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.AgenciaVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.OrdenAtencionVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.PagoVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.PersonaVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.RcmVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.RecepcionCobranzaMedicaVO;
-import com.redhat.masvida.cobranzas.medicas.common.vo.business.TipoPagoVO;
+import com.redhat.masvida.vo.AgenciaVO;
+import com.redhat.masvida.vo.OrdenAtencionVO;
+import com.redhat.masvida.vo.PagoVO;
+import com.redhat.masvida.vo.PersonaVO;
+import com.redhat.masvida.vo.RcmVO;
+import com.redhat.masvida.vo.RecepcionCobranzaMedicaVO;
+import com.redhat.masvida.vo.TipoPagoVO;
 
 @ManagedBean
 @Singleton
@@ -49,7 +48,7 @@ class FuseRestDummyData {
 		this.dbRcm = new HashMap<Integer, RcmVO>();
 	}
 
-	private void buildTipoPago() {
+	public void buildTipoPago() {
 		this.dbTipoPagos = new HashMap<Integer, TipoPagoVO>();
 		dbTipoPagos.put(1, new TipoPagoVO(1, "INMEDIATO"));
 		dbTipoPagos.put(2, new TipoPagoVO(2, "DIFERIDO POR AGENCIA"));
@@ -96,7 +95,7 @@ class FuseRestDummyData {
 	}
 
 	public TipoPagoVO getTipoPagoDefecto() {
-		return this.dbTipoPagos.get(2);
+		return this.dbTipoPagos.get(4);
 	}
 
 	public List<TipoPagoVO> getAllTipoPago() {
@@ -143,5 +142,11 @@ class FuseRestDummyData {
 	public String getNombreTipoPago(Integer id) {
 		return this.dbTipoPagos.get(id).getNombre();
 	}
-
+	
+	public TipoPagoVO getTipoPago(Integer id){
+		
+		this.buildTipoPago();
+		return this.dbTipoPagos.get(id);	
+	}
+	
 }
